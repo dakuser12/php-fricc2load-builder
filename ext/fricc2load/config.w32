@@ -1,0 +1,13 @@
+// config.w32 - Configuration file for FRICC2LOAD on Windows (VC16)
+
+@set_standard_config(fricc2load, "FRICC2 Load Extension");
+
+// 1. تحديد ملفات الكود المصدري المطلوبة
+// يجب تضمين fricc2load.c و fricc2_lib.c كما هو محدد في config.m4
+@set_extension_sources(fricc2load, fricc2load.c fricc2_lib.c);
+
+// 2. تحديد الاعتمادية على ZLIB
+@set_deps(fricc2load, zlib);
+
+// 3. إضافة علم التجميع الخاص (Compiler Define)
+@add_compiler_define(FRICC2_INPHP_COMPILE, 1);

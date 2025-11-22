@@ -10,49 +10,48 @@ jobs:
     runs-on: windows-2022
 
     steps:
-    # 1. Checkout Code
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    # 2. Download PHP SDK (phpsdk)
-    - name: Download PHP SDK Tools
+    # 1. Download NEW PHP SDK (supports VS17)
+    - name: Download PHP SDK (VS17)
       run: |
-        Invoke-WebRequest -Uri "https://github.com/microsoft/php-sdk-binary-tools/archive/refs/heads/master.zip" -OutFile "C:/php-sdk-tools.zip"
+        Invoke-WebRequest -Uri "https://github.com/php/php-sdk-binary-tools/archive/refs/heads/master.zip" -OutFile "C:/php-sdk-tools.zip"
         Expand-Archive "C:/php-sdk-tools.zip" -DestinationPath "C:/"
 
-    # 3. Download php-src for PHP 8.2
+    # 2. Download php-src 8.2
     - name: Download php-src 8.2
       run: |
         Invoke-WebRequest -Uri "https://github.com/php/php-src/archive/refs/heads/PHP-8.2.zip" -OutFile "C:/php-src.zip"
         Expand-Archive "C:/php-src.zip" -DestinationPath "C:/"
 
-    # 4. Create Build Tree
+    # 3. Initialize Build Tree using VS17
     - name: Initialize Build Tree
       run: |
         cd C:/php-sdk-binary-tools-master
-        .\phpsdk-vs16-x64.bat -t phpdev
+        .\phpsdk-vs17-x64.bat -t phpdev
 
-    # 5. Copy php-src Into Build Tree
-    - name: Move php-src Into Build tree
+    # 4. Move php-src to build tree
+    - name: Move php-src
       run: |
         Move-Item -Path "C:/php-src-PHP-8.2" -Destination "C:/php-sdk/phpdev/php-src" -Force
 
-    # 6. Copy Your Extension into php-src/ext
+    # 5. Copy extension
     - name: Copy fricc2load Extension
       run: |
         Copy-Item -Path "${{ github.workspace }}/fricc2load" -Destination "C:/php-sdk/phpdev/php-src/ext/fricc2load" -Recurse -Force
 
-    # 7. Run buildconf, configure, and NMAKE
-    - name: Build DLL
+    # 6. Build DLL
+    - name: Build Extension
       run: |
         cd C:/php-sdk/phpdev/php-src
         buildconf.bat
         cscript configure.js --enable-cli --disable-zts --enable-fricc2load=shared --with-mp=64
         nmake
 
-    # 8. Upload DLL Output
-    - name: Upload fricc2load DLL
+    # 7. Upload DLL
+    - name: Upload DLL
       uses: actions/upload-artifact@v4
       with:
-        name: fricc2load-windows-php82
+        name: fricc2load-php82-windows
         path: C:/php-sdk/phpdev/php-src/x64/Release/php_fricc2load.dll

@@ -19,7 +19,7 @@ jobs:
         
       # 1. إعداد بيئة بناء PHP (يقوم بتنزيل الـ SDK و Headers تلقائياً)
       - name: Setup PHP Dev Environment
-        uses: shivammathur/setup-php-sdk@v2
+        uses: shivammathur/setup-php-sdk@v3
         with:
           php-version: ${{ matrix.php-version }}
           build-type: nts # Non Thread Safe

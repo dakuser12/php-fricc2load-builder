@@ -34,11 +34,11 @@ jobs:
           Invoke-WebRequest -Uri $sdkUrl -OutFile $targetPath
           Expand-Archive $targetPath -DestinationPath "C:/php-sdk" -Force
           
-    # 3. Configure and Build 
+  # 3. Configure and Build 
       - name: Run Configure and NMake Build
         run: |
-          # 1. الانتقال إلى المجلد الرئيسي للكود المصدري
-          cd C:\php-src
+          # 1. الانتقال إلى المجلد الرئيسي للكود المصدري باستخدام متغير WORKSPACE
+          cd ${{ github.workspace }}
           
           # 2. تشغيل buildconf.bat من داخل المجلد
           buildconf.bat

@@ -1,0 +1,47 @@
+name: Build FRICC2LOAD Extension for Windows
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+
+    strategy:
+      matrix:
+        php-version: ['8.2']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      # 1. إعداد بيئة بناء PHP (يقوم بتنزيل الـ SDK و Headers تلقائياً)
+      - name: Setup PHP Dev Environment
+        uses: shivammathur/setup-php-sdk@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          build-type: nts # Non Thread Safe
+          compiler: vc17 # Visual Studio 2022
+
+      # 2. خطوة التكوين التلقائية
+      # هذه الخطوات تفشل محلياً، لكنها تنجح في بيئة Windows النظيفة لـ GitHub
+      - name: Run BuildConf and Configure
+        run: |
+          buildconf
+          cscript configure.js --enable-cli --with-zlib --enable-fricc2load=shared --disable-zts --with-vc-vers=vc17
+
+      # 3. تشغيل NMAKE للبناء
+      - name: Run NMake Build
+        # أمر التجميع الذي يولد ملف php_fricc2load.dll
+        run: |
+          nmake /j8
+
+      # 4. حفظ ملف DLL الناتج
+      - name: Locate and Upload DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: php-fricc2load-dll-${{ matrix.php-version }}-nts-x64
+          # تحديد مسار ملف DLL الناتج
+          path: x64/Release_NTS/php_fricc2load.dll

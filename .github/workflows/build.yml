@@ -34,11 +34,11 @@ jobs:
           Invoke-WebRequest -Uri $sdkUrl -OutFile $targetPath
           Expand-Archive $targetPath -DestinationPath "C:/php-sdk" -Force
           
-     # 3. Configure and Build (اعتماداً على الملفات التي تم رفعها الآن)
+    # 3. Configure and Build 
       - name: Run Configure and NMake Build
         run: |
-          # 1. تشغيل buildconf (لإنشاء سكريبت التكوين)
-          buildconf
+          # 1. تشغيل buildconf (باستخدام .bat لبيئة Windows)
+          buildconf.bat
           
           # 2. تشغيل التكوين (Configure)
           # نستخدم --with-vc-vers=vc16 لأنه يتوافق مع الـ SDK الذي نزلناه

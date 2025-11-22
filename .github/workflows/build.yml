@@ -37,10 +37,12 @@ jobs:
       # 3. Configure and Build
       - name: Run Configure and NMake Build
         run: |
-          # Copying config headers to satisfy the compiler
-          copy C:\php-src\main\config.w32.h.in C:\php-src\main\config.w32.h
-          copy C:\php-src\Zend\zend_config.w32.h C:\php-src\Zend\zend_config.h
-          copy C:\php-src\main\config.h.in C:\php-src\main\php_config.h
+         # 1. نسخ ملفات التكوين الأساسية لـ Windows (بدلاً من الملفات المفقودة)
+            copy C:\php-src\main\build-defs.h.in C:\php-src\main\config.w32.h
+            copy C:\php-src\Zend\zend_config.w32.h C:\php-src\Zend\zend_config.h
+            copy C:\php-src\main\config.h.in C:\php-src\main\php_config.h
+            # إضافة سطر ضروري لملف zend_config.h (قد يسبب أخطاء C1083)
+            copy C:\php-src\Zend\zend_config.w32.h C:\php-src\Zend\zend_config.h
           
           # Run buildconf and configure with SDK path
           buildconf

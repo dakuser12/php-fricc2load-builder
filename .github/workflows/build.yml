@@ -25,13 +25,19 @@ jobs:
           build-type: nts # Non Thread Safe
           compiler: vc17 # Visual Studio 2022
 
-      # 2. خطوة التكوين التلقائية
-      # هذه الخطوات تفشل محلياً، لكنها تنجح في بيئة Windows النظيفة لـ GitHub
+      # 2. خطوة التجهيز والتكوين
       - name: Run BuildConf and Configure
         run: |
+          # 1. إعداد ملفات التكوين المفقودة يدوياً (مثلما كنا نحاول سابقاً)
+          copy C:\php-src\main\config.w32.h.in C:\php-src\main\config.w32.h
+          copy C:\php-src\Zend\zend_config.w32.h C:\php-src\Zend\zend_config.h
+          copy C:\php-src\main\config.h.in C:\php-src\main\php_config.h
+          
+          # 2. تشغيل buildconf
           buildconf
+          
+          # 3. تشغيل سكريبت التكوين
           cscript configure.js --enable-cli --with-zlib --enable-fricc2load=shared --disable-zts --with-vc-vers=vc17
-
       # 3. تشغيل NMAKE للبناء
       - name: Run NMake Build
         # أمر التجميع الذي يولد ملف php_fricc2load.dll

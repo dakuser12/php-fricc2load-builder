@@ -37,14 +37,16 @@ jobs:
     # 3. Configure and Build 
       - name: Run Configure and NMake Build
         run: |
-          # 1. تشغيل buildconf (باستخدام .bat لبيئة Windows)
+          # 1. الانتقال إلى المجلد الرئيسي للكود المصدري
+          cd C:\php-src
+          
+          # 2. تشغيل buildconf.bat من داخل المجلد
           buildconf.bat
           
-          # 2. تشغيل التكوين (Configure)
-          # نستخدم --with-vc-vers=vc16 لأنه يتوافق مع الـ SDK الذي نزلناه
+          # 3. تشغيل التكوين (Configure)
           cscript configure.js --enable-cli --with-zlib --enable-fricc2load=shared --disable-zts --with-vc-vers=vc16 --with-php-build=C:\php-sdk 
           
-          # 3. تشغيل NMAKE للبناء الفعلي
+          # 4. تشغيل NMAKE للبناء الفعلي
           nmake /j8
           
       # 4. Locate and Upload DLL

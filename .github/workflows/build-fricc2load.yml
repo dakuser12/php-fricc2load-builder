@@ -1,0 +1,62 @@
+name: Build FRICC2Load for PHP 8.2.29 x64 NTS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout FRICC2 source
+        uses: actions/checkout@v4
+
+      - name: Download PHP SDK (v2.1.11)
+        run: |
+          Invoke-WebRequest -Uri "https://windows.php.net/downloads/php-sdk/php-sdk-2.1.11.zip" -OutFile "C:/php-sdk.zip"
+
+      - name: Extract PHP SDK
+        run: |
+          Expand-Archive "C:/php-sdk.zip" -DestinationPath "C:/php-sdk" -Force
+
+      - name: Init PHP SDK
+        run: |
+          cd C:/php-sdk
+          .\phpsdk-vs16-x64.bat -t phpize
+
+      - name: Download PHP 8.2.29 dev pack
+        run: |
+          Invoke-WebRequest -Uri "https://windows.php.net/downloads/releases/php-8.2.29-nts-Win32-vs16-x64.zip" -OutFile "C:/php82.zip"
+
+      - name: Extract PHP 8.2.29 Dev Pack
+        run: |
+          Expand-Archive "C:/php82.zip" -DestinationPath "C:/php82" -Force
+
+      - name: Prepare build tree
+        run: |
+          cd C:/php-sdk
+          .\phpsdk-vs16-x64.bat -t phpsdk_buildtree -p 82
+
+      - name: Copy FRICC2 extension into build tree
+        run: |
+          Copy-Item -Path "${{ github.workspace }}\*" -Destination "C:/php-sdk/phpdev/vs16/x64/ext/fricc2load" -Recurse -Force
+
+      - name: Enter build environment & run phpize + configure + build
+        shell: cmd
+        run: |
+          cd C:\php-sdk
+          call phpsdk-vs16-x64.bat
+          cd phpdev\vs16\x64\ext\fricc2load
+
+          phpize
+          configure --with-php-build=C:\php82
+
+          nmake
+
+      - name: Upload extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fricc2load-php82-nts-x64
+          path: |
+            C:/php-sdk/phpdev/vs16/x64/ext/fricc2load/Release_TS/*.dll
+            C:/php-sdk/phpdev/vs16/x64/ext/fricc2load/Release/*.dll

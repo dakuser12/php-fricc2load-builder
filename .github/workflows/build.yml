@@ -1,57 +1,54 @@
-name: Build FRICC2LOAD Extension for Windows
+name: Build fricc2load on Windows
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build-windows:
     runs-on: windows-2022
+    defaults:
+      run:
+        shell: powershell
 
     steps:
-    - name: Checkout Repo
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    # 1. Download Official PHP SDK (works with VS17)
-    - name: Download PHP SDK
-      run: |
-        Invoke-WebRequest -Uri "https://windows.php.net/downloads/php-sdk/php-sdk-2.2.0.zip" -OutFile "C:/php-sdk.zip"
-        Expand-Archive "C:/php-sdk.zip" -DestinationPath "C:/php-sdk"
+      # 1️⃣ تحميل PHP NTS + Devel Pack
+      - name: Download PHP
+        run: |
+          Invoke-WebRequest -Uri "https://windows.php.net/downloads/releases/php-8.2.29-nts-Win32-vs16-x64.zip" -OutFile "$env:TEMP\php.zip"
+          Expand-Archive "$env:TEMP\php.zip" -DestinationPath "$env:TEMP\php"
 
-    # 2. Download php-src for PHP 8.2
-    - name: Download php-src 8.2
-      run: |
-        Invoke-WebRequest -Uri "https://github.com/php/php-src/archive/refs/heads/PHP-8.2.zip" -OutFile "C:/php-src.zip"
-        Expand-Archive "C:/php-src.zip" -DestinationPath "C:/"
+      - name: Download PHP Devel Pack
+        run: |
+          Invoke-WebRequest -Uri "https://windows.php.net/downloads/releases/php-devel-pack-8.2.29-nts-Win32-vs16-x64.zip" -OutFile "$env:TEMP\php-devel.zip"
+          Expand-Archive "$env:TEMP\php-devel.zip" -DestinationPath "$env:TEMP\php-devel"
 
-    # 3. Initialize Build Tree
-    - name: Initialize PHP Build Tree
-      run: |
-        cd C:/php-sdk
-        .\phpsdk-vs17-x64.bat -t phpdev
+      # 2️⃣ إعداد البيئة
+      - name: Set PHP paths
+        run: |
+          $phpDir = "$env:TEMP\php\php-8.2.29-nts-Win32-vs16-x64"
+          $develDir = "$env:TEMP\php-devel\php-devel-8.2.29-nts-Win32-vs16-x64"
+          echo "PHP_DIR=$phpDir" >> $env:GITHUB_ENV
+          echo "DEVEL_DIR=$develDir" >> $env:GITHUB_ENV
+          setx PATH "$phpDir;$develDir\bin;%PATH%"
 
-    # 4. Move php-src into build tree
-    - name: Move php-src
-      run: |
-        Move-Item -Path "C:/php-src-PHP-8.2" -Destination "C:/php-sdk/phpdev/php-src" -Force
+      # 3️⃣ بناء fricc2load
+      - name: Build fricc2load
+        run: |
+          cd ${{ github.workspace }}
+          # نفترض أن لديك configure.js في المشروع
+          node configure.js
+          nmake
 
-    # 5. Copy Extension Folder
-    - name: Copy fricc2load
-      run: |
-        Copy-Item -Path "${{ github.workspace }}/fricc2load" -Destination "C:/php-sdk/phpdev/php-src/ext/fricc2load" -Recurse -Force
-
-    # 6. Build DLL
-    - name: Build Extension
-      run: |
-        cd C:/php-sdk/phpdev/php-src
-        buildconf.bat
-        cscript configure.js --enable-cli --disable-zts --enable-fricc2load=shared --with-mp=64
-        nmake
-
-    # 7. Upload DLL
-    - name: Upload DLL
-      uses: actions/upload-artifact@v4
-      with:
-        name: fricc2load-php82-windows
-        path: C:/php-sdk/phpdev/php-src/x64/Release/php_fricc2load.dll
+      # 4️⃣ حفظ DLL الناتج
+      - name: Upload built DLL
+        uses: actions/upload-artifact@v3
+        with:
+          name: fricc2load-dll
+          path: |
+            ${{ github.workspace }}\*.dll

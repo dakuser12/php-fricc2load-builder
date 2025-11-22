@@ -1,53 +1,43 @@
-name: Build FRICC2LOAD Extension for Windows
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-  build-windows:
-    runs-on: windows-2022
-
-    strategy:
-      matrix:
-        php-version: ['8.2']
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      # 1. إعداد بيئة بناء PHP (يقوم بتنزيل الـ SDK و Headers تلقائياً)
-      - name: Setup PHP Dev Environment
-        uses: shivammathur/setup-php-sdk@v3
+# 1. إعداد بيئة بناء PHP (نستخدم إجراء shivammathur/setup-php الأكثر شيوعاً)
+      # لن يقوم هذا الإجراء بتنزيل SDK مباشرة، سنقوم بذلك يدوياً في الخطوة 2
+      - name: Setup PHP Environment
+        uses: shivammathur/setup-php@v2 
         with:
           php-version: ${{ matrix.php-version }}
-          build-type: nts # Non Thread Safe
-          compiler: vc17 # Visual Studio 2022
-
-      # 2. خطوة التجهيز والتكوين
+          extensions: none
+          tools: none
+          ini-values: none
+          # هذا الإجراء يعمل بشكل أفضل في إعداد البيئة الأساسية
+      
+      # 2. تنزيل حزمة تطوير PHP (SDK) يدوياً واستخراجها
+      - name: Download PHP 8.2 SDK
+        run: |
+          # رابط مباشر لحزمة تطوير PHP 8.2 NTS x64 (استناداً إلى الهاش الذي ذكرته سابقاً)
+          $sdkUrl = "https://windows.php.net/downloads/releases/php-8.2.29-nts-Win32-vs16-x64.zip" 
+          $targetPath = "C:/PHP_SDK.zip"
+          Invoke-WebRequest -Uri $sdkUrl -OutFile $targetPath
+          Expand-Archive $targetPath -DestinationPath "C:/php-sdk" -Force
+          
+      # 3. خطوة التجهيز والتكوين (نحتاج لتعديل المسارات بعد التنزيل اليدوي)
       - name: Run BuildConf and Configure
         run: |
-          # 1. إعداد ملفات التكوين المفقودة يدوياً (مثلما كنا نحاول سابقاً)
+          # 1. إعداد ملفات التكوين المفقودة يدوياً (لتجاوز أخطاء C1083)
           copy C:\php-src\main\config.w32.h.in C:\php-src\main\config.w32.h
           copy C:\php-src\Zend\zend_config.w32.h C:\php-src\Zend\zend_config.h
           copy C:\php-src\main\config.h.in C:\php-src\main\php_config.h
           
-          # 2. تشغيل buildconf
+          # 2. تشغيل buildconf ثم configure
           buildconf
+          cscript configure.js --enable-cli --with-zlib --enable-fricc2load=shared --disable-zts --with-vc-vers=vc16 --with-php-build=C:\php-sdk 
           
-          # 3. تشغيل سكريبت التكوين
-          cscript configure.js --enable-cli --with-zlib --enable-fricc2load=shared --disable-zts --with-vc-vers=vc17
-      # 3. تشغيل NMAKE للبناء
+      # 4. تشغيل NMAKE للبناء (نترك هذه الخطوة كما هي)
       - name: Run NMake Build
-        # أمر التجميع الذي يولد ملف php_fricc2load.dll
         run: |
           nmake /j8
 
-      # 4. حفظ ملف DLL الناتج
+      # 5. حفظ ملف DLL الناتج (نترك هذه الخطوة كما هي)
       - name: Locate and Upload DLL
         uses: actions/upload-artifact@v4
         with:
           name: php-fricc2load-dll-${{ matrix.php-version }}-nts-x64
-          # تحديد مسار ملف DLL الناتج
           path: x64/Release_NTS/php_fricc2load.dll

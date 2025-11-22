@@ -10,34 +10,34 @@ jobs:
     runs-on: windows-2022
 
     steps:
-    - name: Checkout Repository
+    - name: Checkout Repo
       uses: actions/checkout@v4
 
-    # 1. Download NEW PHP SDK (supports VS17)
-    - name: Download PHP SDK (VS17)
+    # 1. Download Official PHP SDK (works with VS17)
+    - name: Download PHP SDK
       run: |
-        Invoke-WebRequest -Uri "https://github.com/php/php-sdk-binary-tools/archive/refs/heads/master.zip" -OutFile "C:/php-sdk-tools.zip"
-        Expand-Archive "C:/php-sdk-tools.zip" -DestinationPath "C:/"
+        Invoke-WebRequest -Uri "https://windows.php.net/downloads/php-sdk/php-sdk-2.2.0.zip" -OutFile "C:/php-sdk.zip"
+        Expand-Archive "C:/php-sdk.zip" -DestinationPath "C:/php-sdk"
 
-    # 2. Download php-src 8.2
+    # 2. Download php-src for PHP 8.2
     - name: Download php-src 8.2
       run: |
         Invoke-WebRequest -Uri "https://github.com/php/php-src/archive/refs/heads/PHP-8.2.zip" -OutFile "C:/php-src.zip"
         Expand-Archive "C:/php-src.zip" -DestinationPath "C:/"
 
-    # 3. Initialize Build Tree using VS17
-    - name: Initialize Build Tree
+    # 3. Initialize Build Tree
+    - name: Initialize PHP Build Tree
       run: |
-        cd C:/php-sdk-binary-tools-master
+        cd C:/php-sdk
         .\phpsdk-vs17-x64.bat -t phpdev
 
-    # 4. Move php-src to build tree
+    # 4. Move php-src into build tree
     - name: Move php-src
       run: |
         Move-Item -Path "C:/php-src-PHP-8.2" -Destination "C:/php-sdk/phpdev/php-src" -Force
 
-    # 5. Copy extension
-    - name: Copy fricc2load Extension
+    # 5. Copy Extension Folder
+    - name: Copy fricc2load
       run: |
         Copy-Item -Path "${{ github.workspace }}/fricc2load" -Destination "C:/php-sdk/phpdev/php-src/ext/fricc2load" -Recurse -Force
 
